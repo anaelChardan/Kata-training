@@ -11,6 +11,8 @@
 // 
 // Categories and Scoring Rules
 
+import { removeListener } from "process";
+
 // Chance: The player scores the sum of all dice, no matter what they read. For example,
 // 
 // 1,1,3,3,6 placed on “chance” scores 14 (1+1+3+3+6)
@@ -89,14 +91,95 @@
 // Contexts to use this Kata
 // This Kata is quite easy for TDD beginners since the test cases are more or less enumerated in the problem description. The order to implement them in is not prescribed, though, so you can practice that aspect of TDD.
 
+type Dice = 1|2|3|4|5|6
 
-const chance = (diceOne: number, diceTwo: number, diceThree: number, diceFour: number, diceFive: number): number => {
-    return [diceOne, diceTwo, diceThree, diceFour, diceFive].reduce((acc, current) => current + acc, 0);
+type Roll = {
+    one: Dice
+    two: Dice
+    three: Dice
+    four: Dice
+    five: Dice
+}
+
+const rollCons = (one: Dice, two: Dice, three: Dice, four: Dice, five: Dice): Roll => {
+    return {
+        one: one,
+        two: two,
+        three: three,
+        four: four,
+        five: five
+    }
+}
+
+type RollResult = number;
+
+const chance = (roll: Roll): RollResult => {
+    return [roll.one, roll.two, roll.three, roll.four, roll.five].reduce((acc, current: Dice) => current + acc, 0)
+}
+
+const yatzy = (roll: Roll): RollResult => {
+    if (
+        [roll.one, roll.two, roll.three, roll.four, roll.five].filter(current => current == roll.one).length == 5
+    ) {
+        return 50
+    }
+
+    return 0
+}
+
+const oneToSix = (roll: Roll, number: 'one'|'two'|'three'|'four'|'five'|'six'): RollResult => {
+    const numberToValue = {
+        'one': 1,
+        'two': 2,
+        'three': 3,
+        'four': 4,
+        'five': 5,
+        'six': 6
+    }
+
+    return [roll.one, roll.two, roll.three, roll.four, roll.five]
+        .filter(dice => dice === numberToValue[number])
+        .reduce((acc, current) => acc + current, 0)
 }
 
 
 describe('Yatzy', () => {
     it('computes the chance category score for roll', () => {
-        expect(chance(1,1,3,3,6)).toEqual(14);
+        const roll = rollCons(1, 1, 3, 3, 6)
+
+        expect(chance(roll)).toEqual(14);
+    })
+
+    it('Yatzy: If all dice have the same number, the player scores 50 points', () => {
+        const roll = rollCons(1, 1, 1, 1, 1)
+
+        expect(yatzy(roll)).toEqual(50)
+    })
+
+    it('Yatzy: If all dice does not have the same number, the player scores 0 points', () => {
+        const roll = rollCons(1, 1, 1, 2, 1)
+
+        expect(yatzy(roll)).toEqual(0)
+    })
+
+    it('Ones, Twos, Threes, Fours, Fives, Sixes: The player scores the sum of the dice that reads one, two, three, four, five or six, respectively for fours', () => {
+        //'scores the four against the roll 1,1,2,4,4'
+        const roll = rollCons(1,1,2,4,4)
+
+        expect(oneToSix(roll, 'four')).toEqual(8)
+    })
+
+    it('Ones, Twos, Threes, Fours, Fives, Sixes: The player scores the sum of the dice that reads one, two, three, four, five or six, respectively for twos', () => {
+        //'scores the twos against the roll 2,3,2,5,1'
+        const roll = rollCons(2,3,2,5,1)
+
+        expect(oneToSix(roll, 'two')).toEqual(4)
+    })
+
+    it('Ones, Twos, Threes, Fours, Fives, Sixes: The player scores the sum of the dice that reads one, two, three, four, five or six, respectively for ones', () => {
+        //'scores the ones against the roll 3,3,3,4,5'
+        const roll = rollCons(3,3,3,4,5)
+
+        expect(oneToSix(roll, 'one')).toEqual(0)
     })
 })
